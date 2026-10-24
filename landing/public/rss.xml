@@ -6,8 +6,87 @@
     <link>https://robust.computer/</link>
     <description>Short issues — updates frequently — on building software that lasts. Practical, no spam, unsubscribe any time.</description>
     <language>en-us</language>
-    <lastBuildDate>Wed, 07 Oct 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 24 Oct 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://robust.computer/rss.xml" rel="self" type="application/rss+xml" />
+
+    <item>
+      <title>Issue 002 - Building in Public</title>
+      <link>https://robust.computer/field-notes/issue-002</link>
+      <description>My experience getting this brand off the ground Let&apos;s Take a Look (image: IBM PC-compatible clones (circa 1990)) What Building in Public Means Building in public means sharing the process of making something, not just the finished product. Progress, decisions, mistakes, and…</description>
+      <content:encoded><![CDATA[<p>My experience getting this brand off the ground</p>
+<h1>Let's Take a Look</h1>
+<p><img src="/field-notes/issue-002/computer.png" alt="IBM PC-compatible clones (circa 1990)"></p>
+<h3>What Building in Public Means</h3>
+<p>Building in public means sharing the process of making something, not just the finished product. Progress, decisions, mistakes, and lessons, out in the open while they are still happening. This issue is my first honest attempt at it.</p>
+<h3>Boom, That's My Brand!</h3>
+<p><strong>Picture this:</strong> you paste a link into a chat or a post, and a clean preview appears: a logo, a title, a line of description. It looks like magic. Some scraper likely fetches a nice image from the page. <strong>It is not magic.</strong> Someone had to make every single piece of it, and that someone was me. Without that effort, the preview would be empty or broken, and if it were done lazily, it would look too small, pixelated, or missing entirely.</p>
+<p><img src="/field-notes/issue-002/metadata.png" alt="Main Site's Link Preview Card">
+<img src="/field-notes/issue-002/metadata2.png" alt="Individual Slug's Preview Card"></p>
+<h2>How It Actually Went</h2>
+<h3>It Started as a Doodle</h3>
+<p>Robust Computer began with the mascots, as a doodle. A CRT monitor for a head, no brand, no plan, just a character I liked drawing. From there, the brand slowly started to take shape.</p>
+<p><img src="/field-notes/issue-002/drawing.png" alt="The First Drawing"></p>
+<h3>Then Came the Fonts</h3>
+<p>I have a lot of experience and a lot of opinions on type, so I went straight to fonts. I settled on a mix of IBM Plex Mono for the hard accents and Barlow for the bold lettering, and the brand started to feel real. I will spare you the full rant on serif versus sans-serif, but trust me, it was considered.</p>
+<p><img src="/field-notes/issue-002/typeface.png" alt="Main Logo (Typeface)"></p>
+<h3>Redrawing Everything as SVG</h3>
+<p>My drawings from GIMP and my lettering from Canva were made of raster strokes, and raster strokes fall apart when you scale them. So I redrew every one of them as SVG because vectors go from a phone screen to a billboard without losing a pixel.</p>
+<h3>SVGs on the Site, Then Back to PNGs</h3>
+<p>The SVGs went onto the site, where they looked great at every size. Then I hit the part nobody mentions: link previews, search engines, and social cards do not want vectors. They want PNGs. So after all that work going from raster to vector, I went right back to raster for the metadata.</p>
+<h2>The Part Nobody Warns You About</h2>
+<h3>Vectors Versus Rasters</h3>
+<p>Here is the tension. SVGs are great on the page because they scale forever. But search engines and social platforms mostly do not render SVG in link previews. They want rasters, in very specific sizes, and one logo quietly becomes twenty files.</p>
+<h3>One Logo, Twenty Files</h3>
+<p>The checklist I did not know I needed:</p>
+<ul>
+<li>The master SVGs for the site itself</li>
+<li>A favicon set in several sizes</li>
+<li>An Apple touch icon</li>
+<li>An OG image <em>(updatable via scripts + having different OGs for separate pages)</em></li>
+<li>A Twitter card image <em>(same issues as OG images, but needs its own size and handling)</em></li>
+<li>Square crops for places like Instagram and LinkedIn</li>
+<li>Meta titles and descriptions for every page</li>
+<li>A sitemap and a robots file</li>
+<li>Canonical URLs</li>
+</ul>
+<p>And then you test how all of it renders on each platform, because they all crop a little differently.
+Personally, I used <a href="https://www.outrank.so/seotools/website-metadata-checker">Outrank's metadata checker</a> to test how my pages would appear on different platforms. Those are the screenshots above.</p>
+<h2>Taming the Pile</h2>
+<h3>One Source of Truth</h3>
+<p>The first instinct is to dump everything straight into the <code>public</code> folder, but that quickly becomes unmanageable as the number of assets grows.
+I found it much easier to expand my <code>public</code> folder into a structured hierarchy, like <code>public/brand</code> for logos and badges, <code>public/icons</code> for favicons and touch icons, and so on.
+The page you're looking at right now is being served with assets organized in <code>public/issue-002</code>.</p>
+<pre><code class="language-javascript">// brand/assets.js
+// Maps asset variants to their respective file paths
+const variantToSrc = {
+  icon: '/icons/icon.svg',
+  icon404: '/icons/icon-var-404.svg',
+  iconVarAngry: '/icons/icon-var-angry.svg',
+  bannerAlt: '/brand/banner-cut.svg',
+  banner2: '/brand/banner2.svg',
+  banner2Alt: '/brand/banner2-cut.svg',
+}
+</code></pre>
+<p>Now a component asks for the asset it needs from <code>variantToSrc</code> instead of remembering a path, and renaming a file means changing exactly one line.</p>
+<h3>What I Would Tell Someone Starting Out</h3>
+<ul>
+<li>Keep one master SVG and export everything else from it, so you are never redrawing the same picture.</li>
+<li>Decide your image sizes early and name the files clearly.</li>
+<li>Test your link previews before you announce anything, not after.</li>
+<li>Expect the small stuff to take longer than the big stuff.</li>
+</ul>
+<h2>Why Share This</h2>
+<h3>The Unglamorous Part</h3>
+<p>This is the groundwork that never makes it into a launch post. Sharing it is the whole point of building in public: the next person gets a shorter list of surprises.</p>
+<blockquote>
+<p>If you are building something of your own, I hope this saves you a few hours. If it does not, at least you know you are not the only one with twenty copies of the same logo.</p>
+</blockquote>
+<p>Reach out to us on social media: <a href="https://www.instagram.com/robust.computer/">Instagram</a> | <a href="https://x.com/Robust_Computer">X</a> | <a href="https://www.facebook.com/r0bust.c0mputer/">Facebook</a> | <a href="https://www.linkedin.com/company/robust.computer">LinkedIn</a></p>
+<p>Or email us at <a href="mailto:hello@robust.computer">hello@robust.computer</a></p>
+]]></content:encoded>
+      <pubDate>Sat, 24 Oct 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="false">field-notes/issue-002</guid>
+    </item>
 
     <item>
       <title>Issue 001 - A New Beginning</title>
