@@ -2,6 +2,7 @@ import { marked } from 'marked'
 import DOMPurify from 'isomorphic-dompurify'
 import { BRAND_DOMAIN, BRAND_NAME, FIELD_NOTES_LEAD } from './brand.js'
 import { issue001 } from './issues/001.js'
+import { issue002 } from './issues/002.js'
 import { parseMarkdownBlocks } from '../utils/parseMarkdownBlocks.js'
 
 /**
@@ -123,6 +124,7 @@ const CHANNEL_LANGUAGE = 'en-us'
 // runtime feed order doesn't depend on this list.
 export const feed = [
   issue001,
+  issue002,
 ]
 
 // ── Selectors ─────────────────────────────────────────────────────────────

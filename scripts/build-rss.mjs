@@ -295,7 +295,7 @@ if (noBroadcast) {
       body: JSON.stringify(payload),
     })
     if (res.ok) {
-      console.log(`✓ Broadcast queued for ${latestNote.slug} (HTTP ${res.status})`)
+      console.log(`✓ Broadcast queued for ${latestPost.slug} (HTTP ${res.status})`)
     } else {
       let detail = ''
       try {
