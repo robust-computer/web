@@ -126,7 +126,12 @@ const QuoteSection = styled.div`
     pointer-events: none;
   }
   &::before { content: '\\201C'; top: 4px; left: 16px; }
-  &::after { content: '\\201D'; bottom: 4px; right: 4px; }
+  &::after {
+    content: '\\201C';
+    bottom: 4px;
+    right: 4px;
+    transform: rotate(180deg);
+  }
 
   a {
     color: ${colors.ink};

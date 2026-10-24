@@ -2,7 +2,7 @@
   <img src="landing/public/brand/banner2-cut.svg" width="560" alt="Robust Computer">
 </div>
 
-**Version 0.15.1**
+**Version 0.15.2**
 
 Full-stack web app for Robust Computer's Marketing Site & API
 
@@ -167,12 +167,35 @@ yarn feeds:broadcast-dev  # fire the broadcast against dev subscribers
 yarn feeds:broadcast      # fire the broadcast against prod subscribers
 ```
 
-### smoke ([`smoke-landing.mjs`](/scripts/smoke-landing.mjs), [`smoke-server.mjs`](/scripts/smoke-server.mjs))
+The feed artifacts are committed files, so they're easy to leave
+stale or internally inconsistent — a botched merge can land a
+`feed.txt` whose post count disagrees with the `<item>` count in
+`rss.xml`, or a `latest.xml` still pointing at the previous issue.
+`yarn smoke:feeds` is the check that catches it, and
+`yarn feeds:preview` is how you look at the result.
 
-Headless smoke tests for the dev stack. `yarn smoke:landing` walks every route in `App.jsx` and verifies content rendered, every interactive element wired, and no link pointing at a dead destination. `yarn smoke:server` confirms the dev MongoDB is reachable (roundtrips a real Subscriber doc through the same model `POST /api/newsletter` uses, leaving one `smoke-marker@robust.computer` Subscriber behind on each run) and asserts Mailpit captured each of the four `utils/email/*.js` sends.
+```bash
+yarn smoke:feeds                          # validate the five artifacts on disk
+yarn feeds:preview                        # validate + serve a reader-shaped preview
+yarn feeds:preview --port=8099            # …on a different port
+node scripts/smoke-feeds.mjs --base-url=http://localhost:3000   # validate a running server's copy
+```
+
+`yarn feeds:preview` serves `landing/public/` on `http://localhost:8080`
+(no build step, no database, no dev server) with a preview page at
+`/__preview` that renders the RSS items the way a feed reader shows
+them — title, date, guid, description, and the full body — next to
+the plain-text feed as a raw block. The individual artifacts are at
+`/rss.xml`, `/latest.xml`, `/feed.txt`, `/latest.txt`, and
+`/sitemap.xml`, so you can point a feed reader straight at them.
+
+### smoke ([`smoke-landing.mjs`](/scripts/smoke-landing.mjs), [`smoke-feeds.mjs`](/scripts/smoke-feeds.mjs), [`smoke-server.mjs`](/scripts/smoke-server.mjs))
+
+Headless smoke tests for the dev stack. `yarn smoke:landing` walks every route in `App.jsx` and verifies content rendered, every interactive element wired, and no link pointing at a dead destination. `yarn smoke:feeds` validates the committed feed artifacts — XML well-formedness, RSS 2.0 required fields, cross-file consistency between `rss.xml` / `feed.txt` / `latest.*` / `sitemap.xml`, every referenced asset present on disk, and freshness against `landing/src/data/feed.js`. `yarn smoke:server` confirms the dev MongoDB is reachable (roundtrips a real Subscriber doc through the same model `POST /api/newsletter` uses, leaving one `smoke-marker@robust.computer` Subscriber behind on each run) and asserts Mailpit captured each of the four `utils/email/*.js` sends.
 
 ```bash
 yarn smoke:landing                          # every route renders, no dead links
+yarn smoke:feeds                            # feed artifacts are valid, consistent, and fresh
 yarn smoke:server                           # dev Mongo + Mailpit captures each send
 ```
 
