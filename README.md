@@ -188,7 +188,7 @@ yarn smoke:server                           # dev Mongo + Mailpit captures each 
 1. Create feature branch
 2. Commit feature branch → merge to `dev`
 2. Update version controllers on `dev` (`package.json`s + `README.md`)
-3. Run `yarn smoke:landing` and `yarn smoke:server` to confirm stable 
+3. Run `yarn smoke:landing`, `yarn smoke:feeds`, and `yarn smoke:server` to confirm stable 
 2. Commit `dev` → Squash-merge `dev` to `main` with version tag
 3. Fast-forward `dev` to `main`
 4. Delete feature branch
