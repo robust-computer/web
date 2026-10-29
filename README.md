@@ -153,18 +153,18 @@ yarn mail         # foreground; Ctrl+C to stop
 
 ### feeds ([`build-rss.mjs`](/scripts/build-rss.mjs))
 
-Three scripts split the two concerns — write the public feed files, or fire the broadcast — across the local pre-commit and the post-deploy steps. `feeds:build` also regenerates the per-issue Open Graph + Twitter cards, so editing a post's title / `issuePrefix` / `pubDate` / body and running `feeds:build` refreshes every public surface (RSS, plain-text, sitemap, OG, Twitter) in one pass. The artifacts are committed files, so they're easy to leave stale or internally inconsistent — `yarn smoke:feeds` is the check that catches it, and `yarn feeds:preview` serves `landing/public/` (no build step, no database, no dev server) with a reader-shaped preview at `/__preview` next to the plain-text feed.
+The feed files — RSS, plain text, sitemap, and the per-post social cards — are generated from the posts in `landing/src/data/feed.js` and committed to the repo, so they're easy to leave stale. `feeds:build` rewrites all of them in one pass; run it after editing a post. `feeds:broadcast` emails the subscribers. `feeds:preview` serves the result locally so you can read it the way a feed reader would, and `yarn smoke:feeds` checks that the committed files still agree with each other and with the posts.
 
 ```bash
-yarn feeds:build          # write all feeds + sitemap + per-issue cards (pre-commit; no broadcast)
+yarn feeds:build          # write all feeds + sitemap + per-issue cards (no broadcast)
 yarn feeds:broadcast-dev  # fire the broadcast against dev subscribers
 yarn feeds:broadcast      # fire the broadcast against prod subscribers
-yarn feeds:preview        # validate + serve a reader-shaped preview (http://localhost:8080/__preview)
+yarn feeds:preview        # validate + serve a reader-shaped preview (localhost:8080/__preview)
 ```
 
 ### smoke ([`smoke-landing.mjs`](/scripts/smoke-landing.mjs), [`smoke-feeds.mjs`](/scripts/smoke-feeds.mjs), [`smoke-server.mjs`](/scripts/smoke-server.mjs))
 
-Headless smoke tests for the dev stack. `yarn smoke:landing` walks every route in `App.jsx` and verifies content rendered, every interactive element wired, and no link pointing at a dead destination. `yarn smoke:feeds` validates the committed feed artifacts — XML well-formedness, RSS 2.0 required fields, cross-file consistency between `rss.xml` / `feed.txt` / `latest.*` / `sitemap.xml`, every referenced asset present on disk, and freshness against `landing/src/data/feed.js`. `yarn smoke:server` confirms the dev MongoDB is reachable (roundtrips a real Subscriber doc through the same model `POST /api/newsletter` uses, leaving one `smoke-marker@robust.computer` Subscriber behind on each run) and asserts Mailpit captured each of the four `utils/email/*.js` sends. The landing and feed checks read from disk by default — pass `--base-url=<url>` to check a running server's copy instead.
+Three headless checks for the dev stack. `smoke:landing` loads every page and confirms it renders, its buttons work, and its links point somewhere real. `smoke:feeds` confirms the committed feed files are valid, agree with each other, and still match the posts in the repo. `smoke:server` confirms the dev database is reachable and that Mailpit caught the test emails. The landing and feed checks read from disk by default — pass `--base-url=<url>` to check a running server instead.
 
 ```bash
 yarn smoke:landing                          # every route renders, no dead links
