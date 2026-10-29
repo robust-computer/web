@@ -2,7 +2,7 @@
   <img src="landing/public/brand/banner2-cut.svg" width="560" alt="Robust Computer">
 </div>
 
-**Version 0.15.2**
+**Version 0.15.3**
 
 Full-stack web app for Robust Computer's Marketing Site & API
 
@@ -153,45 +153,18 @@ yarn mail         # foreground; Ctrl+C to stop
 
 ### feeds ([`build-rss.mjs`](/scripts/build-rss.mjs))
 
-Three scripts split the two concerns — write the public feed files,
-or fire the broadcast — across the local pre-commit and the
-post-deploy steps. `feeds:build` also regenerates the per-issue
-Open Graph + Twitter cards, so editing a post's title /
-`issuePrefix` / `pubDate` / body and running `feeds:build` refreshes
-every public surface (RSS, plain-text, sitemap, OG, Twitter) in one
-pass.
+The feed files — RSS, plain text, sitemap, and the per-post social cards — are generated from the posts in `landing/src/data/feed.js` and committed to the repo, so they're easy to leave stale. `feeds:build` rewrites all of them in one pass; run it after editing a post. `feeds:preview` serves the result locally so you can read it the way a feed reader would. `yarn smoke:feeds` checks that the committed files still agree with each other and with the posts `feeds:broadcast-dev` and `feeds:broadcast` email the subscribers — against the dev list or the real one.
 
 ```bash
-yarn feeds:build          # write all feeds + sitemap + per-issue cards (pre-commit; no broadcast)
+yarn feeds:build          # write all feeds + sitemap + per-issue cards (no broadcast)
+yarn feeds:preview        # validate + serve a reader-shaped preview (localhost:8080/__preview)
 yarn feeds:broadcast-dev  # fire the broadcast against dev subscribers
 yarn feeds:broadcast      # fire the broadcast against prod subscribers
 ```
 
-The feed artifacts are committed files, so they're easy to leave
-stale or internally inconsistent — a botched merge can land a
-`feed.txt` whose post count disagrees with the `<item>` count in
-`rss.xml`, or a `latest.xml` still pointing at the previous issue.
-`yarn smoke:feeds` is the check that catches it, and
-`yarn feeds:preview` is how you look at the result.
-
-```bash
-yarn smoke:feeds                          # validate the five artifacts on disk
-yarn feeds:preview                        # validate + serve a reader-shaped preview
-yarn feeds:preview --port=8099            # …on a different port
-node scripts/smoke-feeds.mjs --base-url=http://localhost:3000   # validate a running server's copy
-```
-
-`yarn feeds:preview` serves `landing/public/` on `http://localhost:8080`
-(no build step, no database, no dev server) with a preview page at
-`/__preview` that renders the RSS items the way a feed reader shows
-them — title, date, guid, description, and the full body — next to
-the plain-text feed as a raw block. The individual artifacts are at
-`/rss.xml`, `/latest.xml`, `/feed.txt`, `/latest.txt`, and
-`/sitemap.xml`, so you can point a feed reader straight at them.
-
 ### smoke ([`smoke-landing.mjs`](/scripts/smoke-landing.mjs), [`smoke-feeds.mjs`](/scripts/smoke-feeds.mjs), [`smoke-server.mjs`](/scripts/smoke-server.mjs))
 
-Headless smoke tests for the dev stack. `yarn smoke:landing` walks every route in `App.jsx` and verifies content rendered, every interactive element wired, and no link pointing at a dead destination. `yarn smoke:feeds` validates the committed feed artifacts — XML well-formedness, RSS 2.0 required fields, cross-file consistency between `rss.xml` / `feed.txt` / `latest.*` / `sitemap.xml`, every referenced asset present on disk, and freshness against `landing/src/data/feed.js`. `yarn smoke:server` confirms the dev MongoDB is reachable (roundtrips a real Subscriber doc through the same model `POST /api/newsletter` uses, leaving one `smoke-marker@robust.computer` Subscriber behind on each run) and asserts Mailpit captured each of the four `utils/email/*.js` sends.
+Three headless checks for the dev stack. `smoke:landing` loads every page and confirms it renders, its buttons work, and its links point somewhere real. `smoke:feeds` confirms the committed feed files are valid, agree with each other, and still match the posts in the repo. `smoke:server` confirms the dev database is reachable and that Mailpit caught the test emails. The landing and feed checks read from disk by default — pass `--base-url=<url>` to check a running server instead.
 
 ```bash
 yarn smoke:landing                          # every route renders, no dead links
@@ -215,7 +188,7 @@ yarn smoke:server                           # dev Mongo + Mailpit captures each 
 1. Create feature branch
 2. Commit feature branch → merge to `dev`
 2. Update version controllers on `dev` (`package.json`s + `README.md`)
-3. Run `yarn smoke:landing` and `yarn smoke:server` to confirm stable 
+3. Run `yarn smoke:landing`, `yarn smoke:feeds`, and `yarn smoke:server` to confirm stable 
 2. Commit `dev` → Squash-merge `dev` to `main` with version tag
 3. Fast-forward `dev` to `main`
 4. Delete feature branch
@@ -233,27 +206,18 @@ yarn smoke:server                           # dev Mongo + Mailpit captures each 
 | Landing | robust.computer | Vercel |
 | API     | api.robust.computer | Railway |
 
-Landing is a Vercel projects rooted at `landing/`. The API is a Railway service rooted at `server/`.
+Landing is a Vercel project rooted at `landing/`. The API is a Railway service rooted at `server/`.
 
 > NOTE: Auto-deploys on push to `main`.
 
 ### Environment Variables
 
-The full contract lives in [`.env.example`](.env.example). The table below mirrors that contract per host — required vars are listed in the table; optional vars are noted in the rows after. `NODE_ENV` and `PORT` default to `'development'`/`5000` for bare-`node` startup but are set by Railway / `scripts/dev.js` in practice.
+The full contract lives in [`.env.example`](.env.example). Each app reads its own vars through its own `config.js` — `landing/src/config.js` and `server/src/config.js`. `NODE_ENV` and `PORT` default to `'development'` / `5000` for bare-`node` startup, but Railway and `scripts/dev.js` set both in practice.
 
-
-| Project | Environment Variables |
+| Host | Variables |
 |---|---|
-| **Vercel — Landing** | `VITE_API_URL`, `VITE_LANDING_URL` |
-| **Railway (Server)** | `NODE_ENV`, `MONGODB_URI`, `LANDING_URL`, `API_URL`, `PORT`, `NEWSLETTER_ADMIN_SECRET` |
-| **Railway (Server, prod only)** | `RESEND_API_KEY` |
-| **Railway (Server, prod only, optional)** | `DKIM_DOMAIN`, `DKIM_KEY_SELECTOR`, `DKIM_PRIVATE_KEY` |
-| **Dev only** | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAILPIT_HTTP_PORT` (optional) |
+| **Vercel** — Landing | `VITE_API_URL`, `VITE_LANDING_URL` |
+| **Railway** — Server | `NODE_ENV`, `PORT`, `MONGODB_URI`, `LANDING_URL`, `API_URL`, `NEWSLETTER_ADMIN_SECRET` · prod: `RESEND_API_KEY` · opt.: `DKIM_DOMAIN`, `DKIM_KEY_SELECTOR`, `DKIM_PRIVATE_KEY` |
+| **Local dev** — Server | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` · opt.: `MAILPIT_HTTP_PORT` |
 
-> NOTE: Each project owns their own `config.js` which is their own processor for envs.
->
-> `RESEND_API_KEY` is required in production (Railway injects it; `server/src/config.js` throws at boot if it's missing). The dev branch reads the `SMTP_*` vars instead — Mailpit on `localhost:1025` by default, so `SMTP_USER=''` / `SMTP_PASS=''` is the expected value for the unauthenticated local catcher.
->
-> Three optional `DKIM_*` vars (`DKIM_DOMAIN`, `DKIM_KEY_SELECTOR`, `DKIM_PRIVATE_KEY`) live in `.env.example` for future use — when set, the same private key is uploaded to the Resend dashboard to enable the "Signed by: robust.computer" lock. Until then, Resend signs with `resend.dev`.
->
-> `MAILPIT_HTTP_PORT` defaults to `8025` in `scripts/mailpit.js` and `scripts/smoke-server.mjs`; `SMTP_PORT` defaults to `1025`. Override either in `.env.dev` when running Mailpit on a non-default port.
+> `RESEND_API_KEY` is required in production — `server/src/config.js` throws at boot without it. The `DKIM_*` trio is optional: when set, it uploads the key to Resend for the "Signed by: robust.computer" lock; until then Resend signs with `resend.dev`. In dev, `SMTP_*` points at Mailpit (`localhost:1025`); Mailpit ignores auth, so `SMTP_USER` / `SMTP_PASS` can be empty or any dummy value. `MAILPIT_HTTP_PORT` defaults to `8025` and `SMTP_PORT` to `1025` — override either in `.env.dev` when running Mailpit on a non-default port.
