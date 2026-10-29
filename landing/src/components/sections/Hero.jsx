@@ -259,7 +259,25 @@ const TicketBody = styled.pre`
   }
 `
 
-const TicketStamp = styled.span`
+// The stamp renders either as a plain span (no post yet) or as
+// a router link (`as={Link}`) when there is a latest issue.
+// The `$link` prop turns on the hover treatment.
+//
+// `shouldForwardProp` keeps `$link` off the DOM. Emotion's
+// default filter only drops non-HTML props when the styled
+// component renders a string tag; switching to `as={Link}`
+// makes the target a component, and Emotion then forwards
+// everything except `theme` — which put a literal
+// `$link="true"` on the <a> and tripped React's
+// "Invalid attribute name" / "non-boolean attribute" warnings.
+//
+// The filter must also reject `as`: Emotion decides whether the
+// `as` prop is honored by asking the filter about the prop name
+// "as" (a custom filter that allows it disables `as` entirely,
+// and the stamp stops rendering as a router link).
+const TicketStamp = styled('span', {
+  shouldForwardProp: (prop) => prop !== '$link' && prop !== 'as',
+})`
   margin-top: 13px;
   display: inline-block;
   background: ${colors.ink};

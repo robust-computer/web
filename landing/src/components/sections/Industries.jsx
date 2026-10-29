@@ -55,7 +55,7 @@ const Industries = () => {
       <h2><Zer0Text>{industriesHeadline}</Zer0Text></h2>
       <Chips>
         {industries.map((label) => (
-          <Chip key={label} onInk>
+          <Chip key={label} $onInk>
             {label}
           </Chip>
         ))}

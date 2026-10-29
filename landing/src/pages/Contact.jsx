@@ -291,7 +291,7 @@ export default function Contact() {
                   type="button"
                   onClick={() => c.handleChip('projectType', p.value)}
                 >
-                  <Chip on={c.formData.projectType === p.value}>{p.label}</Chip>
+                  <Chip $on={c.formData.projectType === p.value}>{p.label}</Chip>
                 </ChipButton>
               ))}
             </Chips>
@@ -304,7 +304,7 @@ export default function Contact() {
                   type="button"
                   onClick={() => c.handleChip('budget', b.value)}
                 >
-                  <Chip on={c.formData.budget === b.value}>{b.label}</Chip>
+                  <Chip $on={c.formData.budget === b.value}>{b.label}</Chip>
                 </ChipButton>
               ))}
             </Chips>
