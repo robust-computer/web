@@ -22,6 +22,7 @@ import {
   Instagram,
   Mail,
   Newspaper,
+  Rss,
 } from 'lucide-react'
 import config from '../../config'
 import { Logo, Zer0Text } from '../brand'
@@ -29,7 +30,7 @@ import { XBrand } from '../ui'
 import { useHomeLinkClick } from '../../hooks/useHomeLinkClick'
 import { useLocale } from '../../context/LocaleContext'
 
-const ICON_MAP = { Home, Users, Send, Github, Linkedin, Facebook, Instagram, X: XBrand, Mail, Newspaper }
+const ICON_MAP = { Home, Users, Send, Github, Linkedin, Facebook, Instagram, X: XBrand, Mail, Newspaper, Rss }
 
 const Foot = styled.footer`
   max-width: var(--max);

@@ -14,6 +14,17 @@ import { colors } from '../../styles/colors'
  *   active → press (shadow shrinks, element nudges down-right)
  *
  * Hover is suppressed when the button is disabled.
+ *
+ * `shouldForwardProp` keeps the `variant` prop off the DOM.
+ * Emotion filters non-HTML props when a styled component renders
+ * a string tag, but switching to `as={Link}` makes the target a
+ * component and Emotion then forwards everything except `theme` —
+ * which put a literal `variant="gold"` on the <a>.
+ *
+ * The filter must also reject `as`: Emotion decides whether the
+ * `as` prop is honored by asking the filter about the prop name
+ * "as" (a custom filter that allows it disables `as` entirely,
+ * and the button stops rendering as a router link).
  */
 
 const base = `
@@ -80,7 +91,9 @@ const gold = `
   }
 `
 
-const Button = styled.button`
+const Button = styled('button', {
+  shouldForwardProp: (prop) => prop !== 'variant' && prop !== 'as',
+})`
   ${base}
   ${(p) => (p.variant === 'alt' ? alt : p.variant === 'gold' ? gold : solid)}
   ${(p) =>

@@ -6,6 +6,13 @@ import { colors } from '../../styles/colors'
  *
  * Form field with label, input/textarea, and inline error slot.
  * Pure visual — the page owns the value + change handler.
+ *
+ * `$onInk` is the dark-surface variant (white border + text on
+ * the ink background). It's `$`-prefixed for the same reason as
+ * Chip's state props: a plain `onInk` would pass Emotion's
+ * HTML-prop filter (any `on[A-Z]` name looks like an event
+ * handler to React) and land on the DOM as an unknown
+ * attribute.
  */
 
 const Wrap = styled.label`
@@ -21,29 +28,29 @@ const Label = styled.span`
   letter-spacing: 0.05em;
   margin-bottom: 6px;
   text-transform: uppercase;
-  color: ${(p) => (p.onInk ? colors.paper : colors.ink)};
+  color: ${(p) => (p.$onInk ? colors.paper : colors.ink)};
 `
 
 const Input = styled.input`
   width: 100%;
-  border: 3px solid ${(p) => (p.onInk ? colors.paper : colors.ink)};
-  background: ${(p) => (p.onInk ? colors.tie : colors.inputBg)};
-  color: ${(p) => (p.onInk ? colors.paper : colors.ink)};
+  border: 3px solid ${(p) => (p.$onInk ? colors.paper : colors.ink)};
+  background: ${(p) => (p.$onInk ? colors.tie : colors.inputBg)};
+  color: ${(p) => (p.$onInk ? colors.paper : colors.ink)};
   padding: 11px 14px;
   font-size: 17px;
   min-height: 50px;
   font-family: var(--mono);
 
   &::placeholder {
-    color: ${(p) => (p.onInk ? colors.placeholderOnInk : colors.placeholderLight)};
+    color: ${(p) => (p.$onInk ? colors.placeholderOnInk : colors.placeholderLight)};
   }
 `
 
 const Textarea = styled.textarea`
   width: 100%;
-  border: 3px solid ${(p) => (p.onInk ? colors.paper : colors.ink)};
-  background: ${(p) => (p.onInk ? colors.tie : colors.inputBg)};
-  color: ${(p) => (p.onInk ? colors.paper : colors.ink)};
+  border: 3px solid ${(p) => (p.$onInk ? colors.paper : colors.ink)};
+  background: ${(p) => (p.$onInk ? colors.tie : colors.inputBg)};
+  color: ${(p) => (p.$onInk ? colors.paper : colors.ink)};
   padding: 11px 14px;
   font-size: 17px;
   min-height: 150px;
@@ -51,7 +58,7 @@ const Textarea = styled.textarea`
   resize: vertical;
 
   &::placeholder {
-    color: ${(p) => (p.onInk ? colors.placeholderOnInk : colors.placeholderLight)};
+    color: ${(p) => (p.$onInk ? colors.placeholderOnInk : colors.placeholderLight)};
   }
 `
 

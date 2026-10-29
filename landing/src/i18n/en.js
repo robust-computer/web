@@ -355,6 +355,10 @@ export const footerSections = {
   ],
   connect: [
     { href: BRAND_LINKS.github, label: 'GitHub', icon: 'Github' },
+    // The RSS feed is served as a static file from
+    // `public/rss.xml`, so it's a same-tab internal link (no
+    // target="_blank") — the browser renders the feed XML.
+    { href: '/rss.xml', label: 'RSS Feed', icon: 'Rss' },
     { href: BRAND_LINKS.email, label: 'Email', icon: 'Mail' },
   ],
   elsewhere: [

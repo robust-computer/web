@@ -290,6 +290,7 @@ export const footerSections = {
   ],
   connect: [
     { href: BRAND_LINKS.github, label: 'GitHub', icon: 'Github' },
+    { href: '/rss.xml', label: 'Flux RSS', icon: 'Rss' },
     { href: BRAND_LINKS.email, label: 'E-mail', icon: 'Mail' },
   ],
   elsewhere: [

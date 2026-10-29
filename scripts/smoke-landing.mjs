@@ -26,20 +26,25 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *      a <form> with an onSubmit. Every <a> has a non-empty
  *      href.
  *   3. No dead links — internal hrefs point at a known
- *      App.jsx route; external http(s) hrefs are probed with
- *      a short-timeout GET. mailto: / tel: / pure-hash links
+ *      route; external http(s) hrefs are probed with a
+ *      short-timeout GET. mailto: / tel: / pure-hash links
  *      are skipped. External probes run in parallel with a
  *      small concurrency limit so one slow target doesn't
- *      block the whole batch.
+ *      block the whole batch. The known routes are the static
+ *      list below plus one `/field-notes/<slug>` route per
+ *      post in `landing/src/data/feed.js` — the feed is the
+ *      source of truth for which posts exist, so a new issue
+ *      is covered without editing this script.
  *
- * Output is grouped into three sections ("Page Loads",
- * "Clickable Buttons", "Dead Links") with a tri-state line
- * per check: `✅ passed`, `⚠️  flagged` (non-fatal — e.g. a
- * 4xx/5xx from an anti-bot-protected site that still
- * responded), or `❌ failed` (e.g. missing page content, an
- * orphan button, a network error on a dead link). The exit
- * code is 1 only when something `❌` fails; a `⚠️  flagged`
- * line keeps the run exit 0 but is surfaced in the summary.
+ * Output is grouped into four sections ("Page Loads",
+ * "Clickable Buttons", "Internal Links", "Dead Links") with a
+ * tri-state line per check: `✅ passed`, `⚠️  flagged`
+ * (non-fatal — e.g. a 4xx/5xx from an anti-bot-protected site
+ * that still responded), or `❌ failed` (e.g. missing page
+ * content, an orphan button, an internal href that matches no
+ * route, a network error on a dead link). The exit code is 1
+ * only when something `❌` fails; a `⚠️  flagged` line keeps the
+ * run exit 0 but is surfaced in the summary.
  *
  * Run against a running `yarn dev` (Vite dev server on
  * http://localhost:3000 by default). Override the host with
@@ -108,11 +113,10 @@ const normalizedBase = baseUrl.replace(/\/+$/, '')
 // ── routes ───────────────────────────────────────────────────────────────
 // The full route list, in the same order they appear in App.jsx.
 // `contains` is the page-specific text the rendered DOM must
-// include (post-Zer0Text transformation: uppercase, O→0). The
-// Field Notes post slug is the only one on disk today
-// (issue-001) — a new slug needs a new route entry here. The
-// 404 path is arbitrary; React Router's catch-all matches
-// anything that isn't an earlier route.
+// include (the comparison uppercases both sides, so the
+// expected strings are written in uppercase). The 404 path is
+// arbitrary; React Router's catch-all matches anything that
+// isn't an earlier route.
 //
 // Note on the `/field-notes` route: the URL stays brand-prefixed
 // (`/field-notes`), but the rendered page identity is the code
@@ -120,18 +124,35 @@ const normalizedBase = baseUrl.replace(/\/+$/, '')
 // string "Field Notes" is in the SEO <meta name="description">
 // (which the smoke test doesn't introspect). `contains` therefore
 // matches the visible H1 ("NEWS" after Zer0Text), not the URL.
-const ROUTES = [
+//
+// The Field Notes post routes are NOT listed here. They're
+// derived from the feed once the app bundle is loaded (see
+// POST_ROUTES below) so a new issue doesn't need a smoke-test
+// edit — the feed is the single source of truth for which posts
+// exist, and App.jsx serves them all through the
+// `/field-notes/:slug` route. The derived routes are spliced in
+// right after `/field-notes` so the print order still mirrors
+// App.jsx.
+const ROUTES_BEFORE_POSTS = [
   { path: '/',                      contains: 'CUST0M S0FTWARE, BUILT T0 LAST.' },
   { path: '/about',                 contains: 'MEET THE TEAM' },
   { path: '/contact',               contains: 'START A PR0JECT' },
   { path: '/bug-report',            contains: 'REP0RT A BUG' },
   { path: '/field-notes',           contains: 'NEWS' },
-  { path: '/field-notes/issue-001', contains: 'A NEW BEGINNING' },
+]
+
+const ROUTES_AFTER_POSTS = [
   { path: '/unsubscribe',           contains: 'THIS LINK IS BR0KEN' },
   { path: '/privacy',               contains: 'PRIVACY P0LICY' },
   { path: '/terms',                 contains: 'TERMS 0F SERVICE' },
   { path: '/this-does-not-exist',   contains: 'PAGE N0T F0UND' },
 ]
+
+// Filled in from the feed once the bundle is loaded (see
+// POST_ROUTES). Until then the post routes are simply absent —
+// which is why the first render pass can't run before the
+// bundle import.
+let ROUTES = [...ROUTES_BEFORE_POSTS, ...ROUTES_AFTER_POSTS]
 
 // Valid internal paths the "no dead links" check matches
 // against. Anything outside this set is reported as a dead
@@ -139,7 +160,7 @@ const ROUTES = [
 // message so the source can be located). `/rss.xml` is the
 // static feed file served from `landing/public/` — not a
 // React route, but still a real, live destination.
-const KNOWN_ROUTES = new Set([
+let KNOWN_ROUTES = new Set([
   ...ROUTES.map((r) => r.path),
   '/rss.xml',
 ])
@@ -211,8 +232,9 @@ fs.writeFileSync(
     'import { act } from "react"',
     'import App from "./src/App.jsx"',
     'import { LocaleProvider } from "./src/context/LocaleContext.jsx"',
+    'import { feed } from "./src/data/feed.js"',
     'export const React = ReactNS',
-    'export { createRoot, MemoryRouter, act, App, LocaleProvider }',
+    'export { createRoot, MemoryRouter, act, App, LocaleProvider, feed }',
     '',
   ].join('\n'),
 )
@@ -295,14 +317,39 @@ try {
   // The bundle sits inside `landing/`, so the `import 'jsdom'`
   // inside it resolves from `landing/node_modules/jsdom` (a
   // transitive dep of `isomorphic-dompurify`).
-  let App, LocaleProvider, React, createRoot, MemoryRouter, act
+  let App, LocaleProvider, React, createRoot, MemoryRouter, act, feed
   try {
-    ;({ App, LocaleProvider, React, createRoot, MemoryRouter, act } =
+    ;({ App, LocaleProvider, React, createRoot, MemoryRouter, act, feed } =
       await import(pathToFileURL(bundlePath).href))
   } catch (err) {
     console.error(`❌ Failed to load bundle: ${err.message}`)
     process.exit(1)
   }
+
+  // ── Post routes (derived from the feed) ──────────────────────────────
+  // Every post in `landing/src/data/feed.js` gets a
+  // `/field-notes/<slug>` page via App.jsx's `/field-notes/:slug`
+  // route. Deriving the routes from the feed (instead of
+  // hard-coding them) means a new issue is covered the moment
+  // it's added to the feed — no smoke-test edit, no stale
+  // "internal href not in known routes" false positive.
+  //
+  // `contains` is the post title. The Post page renders the
+  // title raw in its <h1> (no Zer0Text), and the comparison
+  // uppercases both sides, so the raw title is the right
+  // expectation here.
+  const POST_ROUTES = feed.map((post) => ({
+    path: `/field-notes/${post.slug}`,
+    contains: post.title,
+  }))
+
+  // Splice the post routes in right after `/field-notes` so the
+  // print order still mirrors the route order in App.jsx.
+  ROUTES = [...ROUTES_BEFORE_POSTS, ...POST_ROUTES, ...ROUTES_AFTER_POSTS]
+  KNOWN_ROUTES = new Set([
+    ...ROUTES.map((r) => r.path),
+    '/rss.xml',
+  ])
 
   // ── Console filter for render-time noise ────────────────────────────
   // When the bundle renders, three sources of noise show up
@@ -322,12 +369,15 @@ try {
   //
   //   • React's "Received true for a non-boolean attribute" /
   //     "Invalid attribute name" / "Unknown event handler"
-  //     — these are REAL source bugs. Components like Chip
-  //     leak the on / onInk props and TicketStamp leaks 
-  //     because Emotion's styled doesn't honor the
-  //     styled-components hBcprefix convention for transient
-  //     props. We collect these as render warnings and surface
-  //     them in the summary so the operator knows — they are
+  //     — these are REAL source bugs: a styled component
+  //     leaking a non-DOM prop onto a host element. Chip used
+  //     to leak `on` / `onInk` (both look like valid/event
+  //     props to React) and Hero's TicketStamp leaked `$link`
+  //     when it renders `as={Link}` (Emotion only filters
+  //     non-DOM props for string tags). Both are fixed; any
+  //     warning that shows up here now is a new regression.
+  //     We collect these as render warnings and surface them in
+  //     the summary so the operator knows — they are
   //     source-code bugs to fix, but they are not smoke-test
   //     regressions, so we don't fail the run on them.
   //
@@ -526,9 +576,11 @@ try {
 
     // ── Check #3: anchors are wired + classify for probe ─────────────
     const anchors = [...document.querySelectorAll('a')]
+    let anchorsOk = true
     for (const anchor of anchors) {
       const result = isLinkWired(anchor)
       if (!result.wired) {
+        anchorsOk = false
         const where = describeLocation(anchor)
         routeIssues.push(`orphan <a> at ${where}: ${result.reason}`)
         failures.push(`${route.path}: orphan <a> at ${where}: ${result.reason}`)
@@ -545,10 +597,11 @@ try {
       renderFailed: false,
       contentOk,
       buttonsOk,
+      anchorsOk,
       anchorCount: anchors.length,
       buttonCount: buttons.length,
     })
-    if (!contentOk || !buttonsOk) exitCode = 1
+    if (!contentOk || !buttonsOk || !anchorsOk) exitCode = 1
 
     // Unmount + flush cleanup effects AFTER the checks.
     // Without this, a useEffect cleanup from the previous
@@ -581,6 +634,7 @@ try {
   let pagesFlagged = 0
   let pagesFailed = 0
   let buttonsFailed = 0
+  let anchorsFailed = 0
 
   // ── Section 1: Page Loads ───────────────────────────────────────
   console.log('══════════════════════════════════════════════════════')
@@ -618,7 +672,27 @@ try {
     }
   }
 
-  // ── Section 3: Dead Links ─────────────────────────────────────────
+  // ── Section 3: Internal links ───────────────────────────────────────
+  // Per-route pass/fail for the internal-link check. A route
+  // whose anchors all point at known routes is ✅; a route with
+  // an anchor pointing at an unknown internal path is ❌ and
+  // fails the run — an internal href that matches no route is
+  // a dead link, exactly like an unreachable external URL.
+  console.log('')
+  console.log('══════════════════════════════════════════════════════')
+  console.log('Checking Internal Links....')
+  console.log('══════════════════════════════════════════════════════')
+  for (const r of routeResults) {
+    if (r.renderFailed) continue
+    if (!r.anchorsOk) {
+      console.log(`❌ ${r.path}`)
+      anchorsFailed++
+    } else {
+      console.log(`✅ ${r.path}`)
+    }
+  }
+
+  // ── Section 4: Dead Links (external) ────────────────────────────────
   // Probe every unique external href once (the same link on
   // multiple pages counts once). Parallel with a small
   // concurrency limit so one slow target doesn't block the
@@ -665,7 +739,7 @@ try {
   // check failed. The exit code is already set by the
   // render loop / probe loop above.
   const flagged = pagesFlagged + buttonsFailed + linksFlagged
-  const failed = pagesFailed + buttonsFailed + linksFailed
+  const failed = pagesFailed + buttonsFailed + anchorsFailed + linksFailed
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2)
 
   console.log('')
