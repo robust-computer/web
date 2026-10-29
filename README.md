@@ -153,13 +153,13 @@ yarn mail         # foreground; Ctrl+C to stop
 
 ### feeds ([`build-rss.mjs`](/scripts/build-rss.mjs))
 
-The feed files — RSS, plain text, sitemap, and the per-post social cards — are generated from the posts in `landing/src/data/feed.js` and committed to the repo, so they're easy to leave stale. `feeds:build` rewrites all of them in one pass; run it after editing a post. `feeds:broadcast` emails the subscribers. `feeds:preview` serves the result locally so you can read it the way a feed reader would, and `yarn smoke:feeds` checks that the committed files still agree with each other and with the posts.
+The feed files — RSS, plain text, sitemap, and the per-post social cards — are generated from the posts in `landing/src/data/feed.js` and committed to the repo, so they're easy to leave stale. `feeds:build` rewrites all of them in one pass; run it after editing a post. `feeds:preview` serves the result locally so you can read it the way a feed reader would. `yarn smoke:feeds` checks that the committed files still agree with each other and with the posts `feeds:broadcast-dev` and `feeds:broadcast` email the subscribers — against the dev list or the real one.
 
 ```bash
 yarn feeds:build          # write all feeds + sitemap + per-issue cards (no broadcast)
+yarn feeds:preview        # validate + serve a reader-shaped preview (localhost:8080/__preview)
 yarn feeds:broadcast-dev  # fire the broadcast against dev subscribers
 yarn feeds:broadcast      # fire the broadcast against prod subscribers
-yarn feeds:preview        # validate + serve a reader-shaped preview (localhost:8080/__preview)
 ```
 
 ### smoke ([`smoke-landing.mjs`](/scripts/smoke-landing.mjs), [`smoke-feeds.mjs`](/scripts/smoke-feeds.mjs), [`smoke-server.mjs`](/scripts/smoke-server.mjs))
