@@ -21,12 +21,12 @@ import { zer0 } from '../../utils/zer0'
  * uses Plex Mono.
  */
 
-// Plex Mono is the mono font. We also turn on its OpenType
-// "zero" feature (slashed zero) when the font supports it, so
-// the visual distinction is unambiguous even at small sizes.
+// Plex Mono is the mono font. Its default zero glyph is the
+// dotted one — the whole point of the brand — so no OpenType
+// feature is needed (IBM Plex Mono ships no 'zero' feature;
+// the dotted zero is simply the default outline).
 const Zero = styled.span`
   font-family: var(--mono);
-  font-feature-settings: 'zero' 1;
 `
 
 const Zer0Text = ({ children }) => {

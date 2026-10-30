@@ -12,56 +12,83 @@
  * components via `${colors.name}`. Font family names live as
  * CSS variables (`--display`, `--mono`, `--body`) and are
  * read by styled components via `var(--name)`.
+ *
+ * font-display policy
+ * -------------------
+ * `optional` (the old value) was the bug behind "the zeros are
+ * in a different font on the first load": with `optional` the
+ * browser gives the face a ~100ms block period and then falls
+ * back FOREVER — it never swaps. On a cold, slow first load the
+ * brand zeros (rendered in IBM Plex Mono by Zer0Text) therefore
+ * painted in the generic monospace fallback, whose zero is a
+ * plain oval — indistinguishable from the letter O. The whole
+ * "Zer0" identity was gone for that page view.
+ *
+ * Now:
+ *   - `block` on the faces that carry the brand (Barlow 800 for
+ *     the headlines, IBM Plex Mono 400/700 for the zeros). These
+ *     are preloaded in index.html, so the text is simply not
+ *     painted for a few tens of ms and then appears in the real
+ *     font. The fallback is never painted, so the zeros can
+ *     never be the wrong glyph.
+ *   - `swap` on the faces that are not preloaded (Barlow
+ *     600/700, IBM Plex Mono 500/600) and on Newsreader: those
+ *     arrive on demand, and blocking them would flash invisible
+ *     text. `swap` self-corrects — the fallback shows for a
+ *     moment, then the real face replaces it.
  */
 
+/* Barlow — the display face (headlines, buttons, chips). */
 @font-face {
   font-family: 'Barlow';
   font-style: normal;
   font-weight: 600;
-  font-display: optional;
+  font-display: swap;
   src: url('/fonts/barlow-600.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Barlow';
   font-style: normal;
   font-weight: 700;
-  font-display: optional;
+  font-display: swap;
   src: url('/fonts/barlow-700.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Barlow';
   font-style: normal;
   font-weight: 800;
-  font-display: optional;
+  font-display: block;
   src: url('/fonts/barlow-800.woff2') format('woff2');
 }
 
+/* IBM Plex Mono — the mono face. Every brand zero is rendered
+   in it (see components/brand/Zer0Text.jsx). */
 @font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 400;
-  font-display: optional;
+  font-display: block;
   src: url('/fonts/ibm-plex-mono-400.woff2') format('woff2');
 }
 @font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 500;
-  font-display: optional;
+  font-display: swap;
   src: url('/fonts/ibm-plex-mono-500.woff2') format('woff2');
 }
 @font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 600;
-  font-display: optional;
+  font-display: swap;
   src: url('/fonts/ibm-plex-mono-600.woff2') format('woff2');
 }
 @font-face {
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 700;
-  font-display: optional;
+  font-display: block;
   src: url('/fonts/ibm-plex-mono-700.woff2') format('woff2');
 }
 
@@ -70,14 +97,14 @@
   font-family: 'Newsreader';
   font-style: normal;
   font-weight: 400 500;
-  font-display: optional;
+  font-display: swap;
   src: url('/fonts/newsreader.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Newsreader';
   font-style: italic;
   font-weight: 400;
-  font-display: optional;
+  font-display: swap;
   src: url('/fonts/newsreader-italic-400.woff2') format('woff2');
 }
 
