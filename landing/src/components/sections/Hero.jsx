@@ -5,7 +5,7 @@ import { Button } from '../ui'
 import { Logo, Zer0Text } from '../brand'
 import { ticketIn } from '../../styles/animations'
 import { colors } from '../../styles/colors'
-import { heroMid, heroStack, mobile } from '../../styles/breakpoints'
+import { heroFull, heroShort, heroTiny, heroStack, mobile } from '../../styles/breakpoints'
 import { useLocale } from '../../context/LocaleContext'
 
 /**
@@ -36,7 +36,6 @@ const Wrap = styled.section`
   max-width: var(--max);
   margin-inline: auto;
   flex: 1;
-  min-height: 0;
   display: flex;
   align-items: center;
   background: ${colors.paper};
@@ -56,17 +55,42 @@ const Inner = styled.div`
   max-width: var(--page);
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 960px;
-  gap: 72px;
+  /* Two columns: copy on the left, the poster + ticket on the
+     right. The art column is fluid — it takes the smaller of a
+     width cap and a height cap, so the row always fits the
+     viewport instead of falling off a cliff into the stacked
+     layout. The height cap is derived from what the row has
+     left after the chrome (--chrome), the pinned promises bar
+     and this block's own padding:
+       100dvh - chrome - 63 (promises) - 136 (padding). */
+  --hero-art: min(720px, 50vw, calc(100dvh - var(--chrome, 145px) - 199px));
+  grid-template-columns: minmax(0, 1fr) var(--hero-art);
+  gap: 56px;
   padding: 64px 56px 72px;
   align-items: center;
 
-  /* Mid tier (1200-1575w, >1215h): stay 2-col but shrink the
-     art column so the headline gets enough room on common
-     laptop sizes (1280-1536) without the row feeling cramped. */
-  ${heroMid} {
-    grid-template-columns: minmax(0, 1fr) 720px;
-    gap: 56px;
+  /* Full tier (1576w+ AND 1320h+): both axes have room for the
+     full-size 960px art and the 96px headline. */
+  ${heroFull} {
+    --hero-art: 960px;
+    gap: 72px;
+  }
+
+  ${heroShort} {
+    /* Short tier (760-1079 tall): keep the row, shrink the art
+       to whatever height is left (720 → ~520 cap). The width cap
+       is lower here (44vw) so the copy column stays wide enough
+       for the headline and the two CTAs to sit on one line. */
+    --hero-art: min(520px, 44vw, calc(100dvh - var(--chrome, 145px) - 135px));
+    gap: 40px;
+    padding: 32px 40px 40px;
+  }
+
+  ${heroTiny} {
+    /* Tiny tier (521-759 tall): everything shrinks a step. */
+    --hero-art: min(360px, 52vw, calc(100dvh - var(--chrome, 145px) - 111px));
+    gap: 28px;
+    padding: 20px 28px 28px;
   }
 
   ${heroStack} {
@@ -79,20 +103,29 @@ const Inner = styled.div`
 const Headline = styled.h1`
   font-family: var(--display);
   font-weight: 800;
-  /* Snaps to four discrete sizes — no continuous growth —
-     so the headline locks to the hero's layout breakpoints.
-     96px on the desktop row, 72px on the mid tier (2-col
-     still, art shrunk to 720), 56px when stacked, 48px on
-     phones. */
-  font-size: 96px;
+  /* Snaps to discrete sizes — no continuous growth — so the
+     headline locks to the hero's layout tiers.
+     96px on the full tier, 72px on the default 2-col row,
+     56px on the short tier, 48px on the tiny tier, 56px when
+     stacked, 48px on phones. */
+  font-size: 72px;
   line-height: 0.92;
   margin: 0 0 26px;
   text-transform: uppercase;
   letter-spacing: -0.015em;
   color: ${colors.ink};
 
-  ${heroMid} {
-    font-size: 72px;
+  ${heroFull} {
+    font-size: 96px;
+  }
+
+  ${heroShort} {
+    font-size: 56px;
+  }
+
+  ${heroTiny} {
+    font-size: 48px;
+    margin-bottom: 20px;
   }
 
   ${heroStack} {
@@ -109,6 +142,16 @@ const Lead = styled.p`
   max-width: 26em;
   margin: 0 0 34px;
   color: ${colors.ink};
+
+  ${heroShort} {
+    font-size: 18px;
+    margin-bottom: 24px;
+  }
+
+  ${heroTiny} {
+    font-size: 16px;
+    margin-bottom: 18px;
+  }
 `
 
 const CTAs = styled.div`
@@ -131,11 +174,8 @@ const Art = styled.div`
 
 const ArtFrame = styled.div`
   position: relative;
-  width: 960px;
-
-  ${heroMid} {
-    width: 720px;
-  }
+  /* Fills the grid column, whose width is --hero-art. */
+  width: 100%;
 
   ${heroStack} {
     /* Cap the art when stacked so the ticket can sit at a
@@ -147,20 +187,22 @@ const ArtFrame = styled.div`
 
 const ArtImg = styled(Logo)`
   display: block;
-  width: 960px;
-  height: 960px;
+  /* The poster is a square SVG — the column width drives both
+     sides, so the art scales with the tier. */
+  width: 100%;
+  height: auto;
   max-width: none;
-  filter: drop-shadow(16px 16px 0 ${colors.ink});
+  filter: drop-shadow(12px 12px 0 ${colors.ink});
 
-  ${heroMid} {
-    width: 720px;
-    height: 720px;
-    filter: drop-shadow(12px 12px 0 ${colors.ink});
+  ${heroFull} {
+    filter: drop-shadow(16px 16px 0 ${colors.ink});
+  }
+
+  ${heroShort} {
+    filter: drop-shadow(10px 10px 0 ${colors.ink});
   }
 
   ${heroStack} {
-    width: 100%;
-    height: auto;
     filter: drop-shadow(8px 8px 0 ${colors.ink});
   }
 `
@@ -175,12 +217,12 @@ const ArtImg = styled(Logo)`
 // the site uses, so it feels native.
 const Ticket = styled.div`
   position: absolute;
-  left: -50px;
-  bottom: 20px;
-  width: 398px;
+  left: -36px;
+  bottom: 16px;
+  width: 320px;
   background: ${colors.ticket};
   border: 4px solid ${colors.ink};
-  box-shadow: 9px 9px 0 ${colors.ink};
+  box-shadow: 7px 7px 0 ${colors.ink};
   padding: 18px 20px 20px;
   transform: rotate(-2.5deg);
   z-index: 2;
@@ -190,12 +232,28 @@ const Ticket = styled.div`
      the animation runs on the compositor (no layout/paint). */
   will-change: transform, opacity;
 
-  ${heroMid} {
-    left: -36px;
-    bottom: 16px;
-    width: 320px;
-    border-width: 4px;
-    box-shadow: 7px 7px 0 ${colors.ink};
+  ${heroFull} {
+    left: -50px;
+    bottom: 20px;
+    width: 398px;
+    box-shadow: 9px 9px 0 ${colors.ink};
+  }
+
+  ${heroShort} {
+    /* Tracks the smaller art — the ticket never grows wider
+       than the poster it sits on. */
+    left: -24px;
+    bottom: 12px;
+    width: min(320px, 76%);
+    padding: 14px 16px 16px;
+  }
+
+  ${heroTiny} {
+    left: -18px;
+    bottom: 8px;
+    width: min(240px, 62%);
+    padding: 10px 12px 12px;
+    box-shadow: 5px 5px 0 ${colors.ink};
   }
 
   ${heroStack} {
@@ -229,9 +287,18 @@ const TicketTag = styled.div`
   text-transform: uppercase;
   color: ${colors.ink};
 
-  ${heroMid} {
+  ${heroShort} {
     font-size: 13px;
     border-bottom-width: 3px;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  ${heroTiny} {
+    font-size: 11px;
+    border-bottom-width: 3px;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
   }
 
   ${heroStack} {
@@ -250,8 +317,12 @@ const TicketBody = styled.pre`
   white-space: pre-wrap;
   color: ${colors.ink};
 
-  ${heroMid} {
-    font-size: 16px;
+  ${heroShort} {
+    font-size: 15px;
+  }
+
+  ${heroTiny} {
+    font-size: 13px;
   }
 
   ${heroStack} {
@@ -278,22 +349,34 @@ const TicketBody = styled.pre`
 const TicketStamp = styled('span', {
   shouldForwardProp: (prop) => prop !== '$link' && prop !== 'as',
 })`
-  margin-top: 13px;
+  margin-top: 12px;
   display: inline-block;
   background: ${colors.ink};
   color: ${colors.paper};
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
   letter-spacing: 0.05em;
-  padding: 4px 13px;
+  padding: 4px 11px;
   text-transform: uppercase;
   text-decoration: none;
 
-  ${heroMid} {
-    margin-top: 12px;
-    font-size: 13px;
-    padding: 4px 11px;
+  ${heroFull} {
+    margin-top: 13px;
+    font-size: 15px;
+    padding: 4px 13px;
+  }
+
+  ${heroShort} {
+    margin-top: 10px;
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
+  ${heroTiny} {
+    margin-top: 9px;
+    font-size: 11px;
+    padding: 3px 9px;
   }
 
   ${heroStack} {

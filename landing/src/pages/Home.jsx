@@ -44,14 +44,16 @@ const Opening = styled.div`
   display: flex;
   flex-direction: column;
   /* Fits in one viewport: 100dvh minus the TopBar + Navbar above.
-     --chrome is set inline from useChromeHeight. */
-  height: calc(100dvh - var(--chrome, 145px));
+     --chrome is set inline from useChromeHeight. min-height (not
+     height) so a row that can't fit grows the opening instead of
+     spilling over the promises bar. */
+  min-height: calc(100dvh - var(--chrome, 145px));
 
   ${heroStack} {
-    /* When the hero stacks (≤1575w OR ≤1215h), the art + headline
+    /* When the hero stacks (≤900w OR ≤520h), the art + headline
        + ticket + lead + CTAs run taller than a viewport — let the
        hero grow and let Promises sit in normal flow below it. */
-    height: auto;
+    min-height: 0;
   }
 `
 
